@@ -1,0 +1,319 @@
+﻿@using GitBranchUI
+
+@using System.Collections.ObjectModel
+
+@if (string.IsNullOrWhiteSpace(viewModel.Error))
+{
+    <svg width="@Width" height="@Height">
+        @for (var i = 0; i < viewModel.Points.Count; i++)
+        {
+            var point = viewModel.Points[i];
+            var cx = CellWidth * point.X + CellWidth/2;
+            var cy = Height - CellHeight * point.Y - CellHeight/2;
+            <circle cx="@cx" cy="@cy" r="3">
+                @if (point.Commit is Maybe<BaseCommit>.Some cmt)
+                {
+                    <title>@cmt.Value.Id</title>
+                }
+            </circle>
+            if (point.From is Maybe<Point>.Some fromPoint)
+            {
+                var prevPoint = fromPoint.Value;
+                var pcx = CellWidth * prevPoint.X + CellWidth/2;
+                var pcy = Height - CellHeight * prevPoint.Y - CellHeight/2;
+                if (prevPoint.X == point.X)
+                {
+                    <path d="M @pcx @pcy L @cx @cy"></path>
+                }
+                else if (prevPoint.X > point.X)
+                {
+                    var cornercx = CellWidth * point.X + CellWidth/2;
+                    var cornercy = Height - CellHeight * prevPoint.Y - CellHeight/2;
+                    var startcx = CellWidth * point.X + CellWidth;
+                    var startcy = Height - CellHeight * prevPoint.Y - CellHeight/2;
+                    var endcx = CellWidth * point.X + CellWidth/2;
+                    var endcy = Height - CellHeight * prevPoint.Y - CellHeight;
+                    <path d="M @pcx @pcy L @startcx @startcy Q @cornercx @cornercy @endcx @endcy L @cx @cy"></path>
+                }
+                else if (prevPoint.X < point.X)
+                {
+                    var cornercx = CellWidth * point.X + CellWidth/2;
+                    var cornercy = Height - CellHeight * prevPoint.Y - CellHeight/2;
+                    var startcx = CellWidth * point.X;
+                    var startcy = Height - CellHeight * prevPoint.Y - CellHeight/2;
+                    var endcx = CellWidth * point.X + CellWidth/2;
+                    var endcy = Height - CellHeight * prevPoint.Y - CellHeight;
+                    <path d="M @pcx @pcy L @startcx @startcy Q @cornercx @cornercy @endcx @endcy L @cx @cy"></path>
+                }
+            }
+            if (point.FromSecond is Maybe<Point>.Some fromSecondPoint)
+            {
+                var prevPoint = fromSecondPoint.Value;
+                var pcx = CellWidth * prevPoint.X + CellWidth/2;
+                var pcy = Height - CellHeight * prevPoint.Y - CellHeight/2;
+                if (prevPoint.X == point.X)
+                {
+                    <path d="M @pcx @pcy L @cx @cy"></path>
+                }
+                else if (prevPoint.X > point.X)
+                {
+                    var cornercx = CellWidth * prevPoint.X + CellWidth/2;
+                    var cornercy = Height - CellHeight * point.Y - CellHeight/2;
+                    var startcx = CellWidth * prevPoint.X + CellWidth/2;
+                    var startcy = Height - CellHeight * point.Y;
+                    var endcx = CellWidth * prevPoint.X;
+                    var endcy = Height - CellHeight * point.Y - CellHeight/2;
+                    <path d="M @pcx @pcy L @startcx @startcy Q @cornercx @cornercy @endcx @endcy L @cx @cy"></path>
+                }
+                else if (prevPoint.X < point.X)
+                {
+                    var cornercx = CellWidth * prevPoint.X + CellWidth/2;
+                    var cornercy = Height - CellHeight * point.Y - CellHeight/2;
+                    var startcx = CellWidth * prevPoint.X + CellWidth/2;
+                    var startcy = Height - CellHeight * point.Y;
+                    var endcx = CellWidth * prevPoint.X + CellWidth;
+                    var endcy = Height - CellHeight * point.Y - CellHeight/2;
+                    <path d="M @pcx @pcy L @startcx @startcy Q @cornercx @cornercy @endcx @endcy L @cx @cy"></path>
+                }
+            }
+        }
+    </svg>
+}
+else
+{
+    <span>@viewModel.Error</span>
+}
+
+@code {
+    [Parameter]
+    public int CellWidth { get; set; } = 20;
+
+    [Parameter]
+    public int CellHeight { get; set; } = 20;
+
+    [Parameter]
+    public List<BaseCommit> Commits { get; set; } = new List<BaseCommit>();
+
+    private ViewModel viewModel = new ViewModel();
+
+    private int Height => CellHeight * Commits.Count;
+    private int Width => CellWidth * viewModel.MaxWidth;
+
+    protected override void OnInitialized()
+    {
+        viewModel = Generate(Commits);
+    }
+
+    private ViewModel Generate(IEnumerable<BaseCommit> commits)
+    {
+        var model = new ViewModel();
+        foreach (var commit in commits)
+        {
+            if (model.Points.Any(x => IsEqual(x.Commit, commit)))
+            {
+                model.Error = $"Trying to add a commit {commit.Id} that has already added.";
+                break;
+            }
+            if (commit is Init)
+            {
+                var existingBranch = model.CurrentShifts.IndexOf(commit.Branch);
+                if (existingBranch > -1)
+                {
+                    model.Error = $"Trying to add init commit {commit.Id} for a branch {commit.Branch.Name} that exists.";
+                    break;
+                }
+                else
+                {
+                    model.AddBranch(commit.Branch);
+                    model.Points.Add(new Point(model.CurrentShifts.Count - 1, model.CurrentY, commit));
+                }
+            }
+            else if (commit is Commit cmt)
+            {
+                var existingBranch = model.CurrentShifts.IndexOf(commit.Branch);
+                if (existingBranch > -1)
+                {
+                    var lastPoint = model.Points.Last(x => x.Commit is Maybe<BaseCommit>.Some lastCommit && lastCommit.Value.Branch == commit.Branch);
+                    if (!IsEqual(lastPoint.Commit, cmt.Previous))
+                    {
+                        model.Error = $"Incorrect state. Previous commit is {cmt.Previous.Id} for commit {commit.Id}, but last point commit is {ToString(lastPoint.Commit)}.";
+                        break;
+                    }
+                    else
+                    {
+                        model.Points.Add(new Point(existingBranch, model.CurrentY, commit, lastPoint));
+                    }
+                }
+                else
+                {
+                    var branchOfPrevCommit = model.CurrentShifts.IndexOf(cmt.Previous.Branch);
+                    if (branchOfPrevCommit > -1)
+                    {
+                        model.InsertBranch(commit.Branch, branchOfPrevCommit + 1);
+                        var fromPoint = model.Points.Last(x => x.Commit is Maybe<BaseCommit>.Some lastCommit && lastCommit.Value.Branch == cmt.Previous.Branch);
+                        model.Points.Add(new Point(branchOfPrevCommit + 1, model.CurrentY, commit, fromPoint));
+                    }
+                    else
+                    {
+                        model.AddBranch(commit.Branch);
+                        var bottomPoint = new Point(model.CurrentShifts.Count - 1, -1);
+                        model.Points.Add(new Point(model.CurrentShifts.Count - 1, model.CurrentY, commit, bottomPoint));
+                    }
+                }
+            }
+            else if (commit is Merge mrg)
+            {
+                var existingBranch = model.CurrentShifts.IndexOf(commit.Branch);
+                var fromBranch = model.CurrentShifts.IndexOf(mrg.MergedFrom);
+                if (existingBranch > -1 && fromBranch > -1)
+                {
+                    var lastPoint = model.Points.Last(x => x.Commit is Maybe<BaseCommit>.Some lastCommit && lastCommit.Value.Branch == commit.Branch);
+                    var lastPointInFromBranch = model.Points.Last(x => x.Commit is Maybe<BaseCommit>.Some lastCommit && lastCommit.Value.Branch == mrg.MergedFrom);
+                    if (!IsEqual(lastPoint.Commit, mrg.Previous))
+                    {
+                        model.Error = $"Incorrect state. Previous commit is {mrg.Previous.Id} for commit {commit.Id}, but last point commit is {ToString(lastPoint.Commit)}.";
+                        break;
+                    }
+                    else
+                    {
+                        model.Points.Add(new Point(existingBranch, model.CurrentY, commit, lastPoint, lastPointInFromBranch));
+                    }
+                }
+                else if (existingBranch > -1 && fromBranch == -1)
+                {
+                    var lastPoint = model.Points.Last(x => x.Commit is Maybe<BaseCommit>.Some lastCommit && lastCommit.Value.Branch == commit.Branch);
+                    if (!IsEqual(lastPoint.Commit, mrg.Previous))
+                    {
+                        model.Error = $"Incorrect state. Previous commit is {mrg.Previous.Id} for commit {commit.Id}, but last point commit is {ToString(lastPoint.Commit)}.";
+                        break;
+                    }
+                    else
+                    {
+                        model.AddBranch(mrg.MergedFrom);
+                        var bottomPoint = new Point(model.CurrentShifts.Count - 1, -1);
+                        model.Points.Add(new Point(existingBranch, model.CurrentY, commit, lastPoint, bottomPoint));
+                    }
+                }
+                else if (existingBranch == -1 && fromBranch > -1)
+                {
+                    var lastPointInFromBranch = model.Points.Last(x => x.Commit is Maybe<BaseCommit>.Some lastCommit && lastCommit.Value.Branch == mrg.MergedFrom);
+                    model.AddBranch(commit.Branch);
+                    var bottomPoint = new Point(model.CurrentShifts.Count - 1, -1);
+                    model.Points.Add(new Point(model.CurrentShifts.Count - 1, model.CurrentY, commit, bottomPoint, lastPointInFromBranch));
+                }
+                else if (existingBranch == -1 && fromBranch == -1)
+                {
+                    model.AddBranch(commit.Branch);
+                    model.AddBranch(mrg.MergedFrom);
+                    var bottomPoint1 = new Point(model.CurrentShifts.Count - 2, -1);
+                    var bottomPoint2 = new Point(model.CurrentShifts.Count - 1, -1);
+                    model.Points.Add(new Point(model.CurrentShifts.Count - 2, model.CurrentY, commit, bottomPoint1, bottomPoint2));
+                }
+            }
+            else
+            {
+                model.Error = $"Unsupported commit type. Id is ${commit.Id}.";
+                break;
+            }
+            model.Up();
+        }
+        return model;
+    }
+
+    private bool IsEqual(Maybe<BaseCommit> maybeCommit, BaseCommit commit) =>
+        maybeCommit is Maybe<BaseCommit>.Some cmt && cmt.Value == commit;
+
+    private string ToString(Maybe<BaseCommit> maybeCommit) =>
+        maybeCommit is Maybe<BaseCommit>.Some cmt ? cmt.Value.Id : "None";
+
+    private record ViewModel
+    {
+        public int CurrentY { get; private set; } = 0;
+        private List<Branch> _currentShifts = new List<Branch>();
+        public string Error { get; set; } = string.Empty;
+
+        public void AddBranch(Branch branch)
+        {
+            _currentShifts.Add(branch);
+            if (MaxWidth < _currentShifts.Count)
+            {
+                MaxWidth = _currentShifts.Count;
+            }
+        }
+
+        public void InsertBranch(Branch branch, int i)
+        {
+            _currentShifts.Insert(i, branch);
+            if (MaxWidth < _currentShifts.Count)
+            {
+                MaxWidth = _currentShifts.Count;
+            }
+        }
+
+        public ReadOnlyCollection<Branch> CurrentShifts => _currentShifts.AsReadOnly();
+
+        public List<Point> Points { get; } = new List<Point>();
+
+        public int MaxWidth { get; private set; } = 0;
+
+        public void Up() => CurrentY++;
+    }
+
+    private record Point
+    {
+        public int X { get; }
+        public int Y { get; }
+        public Maybe<BaseCommit> Commit { get; }
+        public Maybe<Point> From { get; }
+        public Maybe<Point> FromSecond { get; }
+
+        public Point(int x, int y)
+        {
+            X = x;
+            Y = y;
+            Commit = new Maybe<BaseCommit>.None();
+            From = new Maybe<Point>.None();
+            FromSecond = new Maybe<Point>.None();
+        }
+
+        public Point(int x, int y, BaseCommit commit)
+        {
+            X = x;
+            Y = y;
+            Commit = new Maybe<BaseCommit>.Some(commit);
+            From = new Maybe<Point>.None();
+            FromSecond = new Maybe<Point>.None();
+        }
+
+        public Point(int x, int y, BaseCommit commit, Point from)
+        {
+            X = x;
+            Y = y;
+            Commit = new Maybe<BaseCommit>.Some(commit);;
+            From = new Maybe<Point>.Some(from);
+            FromSecond = new Maybe<Point>.None();
+        }
+
+        public Point(int x, int y, BaseCommit commit, Point from, Point fromSecond)
+        {
+            X = x;
+            Y = y;
+            Commit = new Maybe<BaseCommit>.Some(commit);;
+            From = new Maybe<Point>.Some(from);
+            FromSecond = new Maybe<Point>.Some(fromSecond);
+        }
+    }
+
+    private abstract class Maybe<T>
+    {
+        private Maybe() {}
+
+        public sealed class Some : Maybe<T>
+        {
+            public Some(T value) => Value = value;
+            public T Value { get; }
+        }
+
+        public sealed class None : Maybe<T> {}
+    }
+}

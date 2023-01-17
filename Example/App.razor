@@ -1,0 +1,27 @@
+﻿@using GitBranchUI
+
+<GitBranchTree Commits=@commits></GitBranchTree>
+
+@code {
+    private List<BaseCommit> commits = new List<BaseCommit>();
+    protected override void OnInitialized()
+    {
+        var master = new Branch("master2");
+        commits.Add(new Init("0", master));
+        commits.Add(new Commit("1", master, commits[0]));
+        commits.Add(new Commit("2", master, commits[1]));
+        var slave = new Branch("slave");
+        commits.Add(new Init("3", slave));
+        commits.Add(new Commit("4", slave, commits[3]));
+        commits.Add(new Commit("5", master, commits[2]));
+        var feature = new Branch("feature");
+        commits.Add(new Commit("6", feature, commits[5]));
+        commits.Add(new Merge("7", slave, feature, commits[6]));
+        commits.Add(new Commit("8", slave, commits[4]));
+        commits.Add(new Merge("9", slave, master, commits[5]));
+        commits.Add(new Commit("10", feature, commits[7]));
+        commits.Add(new Merge("11", feature, master, commits[9]));
+        commits.Add(new Merge("12", master, slave, commits[8]));
+        commits.Add(new Merge("13", master, feature, commits[10]));
+    }
+}
