@@ -4,8 +4,12 @@
     <TargetFramework>net7.0</TargetFramework>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
+    <PackageId>GitBranchUI</PackageId>
+    <Version>0.1.0</Version>
+    <Authors>Yauhen Pyl</Authors>
+    <Company>Yauhen Pyl</Company>
+    <PackageProjectUrl>https://github.com/ypyl/GitBranchUI</PackageProjectUrl>
   </PropertyGroup>
-
 
   <ItemGroup>
     <SupportedPlatform Include="browser" />
