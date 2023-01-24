@@ -8,7 +8,9 @@
     <Version>0.1.0</Version>
     <Authors>Yauhen Pyl</Authors>
     <Company>Yauhen Pyl</Company>
-    <PackageProjectUrl>https://github.com/ypyl/GitBranchUI</PackageProjectUrl>
+    <PackageProjectUrl>https://github.com/ypyl/GitBranchUI/</PackageProjectUrl>
+    <Description>This is a Razor component library with a git branch UI component.</Description>
+    <License>MIT</License>
   </PropertyGroup>
 
   <ItemGroup>
