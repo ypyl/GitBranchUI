@@ -7,9 +7,9 @@
   "linkerEnabled": true,
   "resources": {
     "assembly": {
-      "Example.dll": "sha256-944hOiClpiCNdZQK8NjW2QuWG0mjeg5Kfip\/rboKyk4=",
+      "Example.dll": "sha256-MPG6r5p3mjI7LCt\/VcpfsPXlTbD6cKBG0QQRST1ShHc=",
       "GitBranchUI.dll": "sha256-RceDFut8RmY188\/KwyRvmB2275+0WyY4TNeq5IRslxM=",
-      "Microsoft.AspNetCore.Components.dll": "sha256-FiZ2bDFXh53gVtifvflFlG+yGUNG5esFrPCb0mejFNs=",
+      "Microsoft.AspNetCore.Components.dll": "sha256-E2d8zZXtE\/l75txFDFtYcEBdtKutMZ1EI90Q\/T9+Jlw=",
       "Microsoft.AspNetCore.Components.Web.dll": "sha256-H8O+h8OcyFBDmfdEL2L66RZU9\/zByyI0ZVzjciwjIN8=",
       "Microsoft.AspNetCore.Components.WebAssembly.dll": "sha256-Ne5q8neM1Etz8decq+z8y\/JfUc8E6yQRTSPR593aWP8=",
       "Microsoft.Extensions.Configuration.Abstractions.dll": "sha256-X\/f4fDl2cuIRXeWHhK\/f2UqQbFioD+RU4a4CEh0zrrQ=",
