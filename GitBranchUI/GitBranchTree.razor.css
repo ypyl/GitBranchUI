@@ -1,8 +1,4 @@
-﻿svg {
-    border: 1px black solid;
-}
-
-path {
+﻿path {
     stroke: black;
     stroke-width: 1px;
     fill: none;

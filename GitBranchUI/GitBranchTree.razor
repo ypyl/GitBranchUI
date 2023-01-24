@@ -4,7 +4,7 @@
 
 @if (string.IsNullOrWhiteSpace(viewModel.Error))
 {
-    <svg width="@Width" height="@Height">
+    <svg width="100%" height="@Height">
         @for (var i = 0; i < viewModel.Points.Count; i++)
         {
             var point = viewModel.Points[i];
@@ -16,6 +16,12 @@
                     <title>@cmt.Value.Id</title>
                 }
             </circle>
+            @if (ShowMessage && point.Commit is Maybe<BaseCommit>.Some baseCmt)
+            {
+                <text>
+                    <text style="font-size: @(CellHeight-4)px;" x="@Width" y="@(Height - CellHeight * point.Y - 4)">@baseCmt.Value.Id <tspan style="font-style: italic;">(@baseCmt.Value.Branch.Name)</tspan></text>
+                </text>
+            }
             if (point.From is Maybe<Point>.Some fromPoint)
             {
                 var prevPoint = fromPoint.Value;
@@ -90,6 +96,9 @@ else
 
     [Parameter]
     public int CellHeight { get; set; } = 20;
+
+    [Parameter]
+    public bool ShowMessage { get; set; } = false;
 
     [Parameter]
     public List<BaseCommit> Commits { get; set; } = new List<BaseCommit>();

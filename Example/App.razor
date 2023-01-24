@@ -1,27 +1,27 @@
 ﻿@using GitBranchUI
 
-<GitBranchTree Commits=@commits></GitBranchTree>
+<GitBranchTree Commits=@commits CellWidth="20" CellHeight="20" ShowMessage="true"></GitBranchTree>
 
 @code {
     private List<BaseCommit> commits = new List<BaseCommit>();
     protected override void OnInitialized()
     {
-        var master = new Branch("master2");
-        commits.Add(new Init("0", master));
-        commits.Add(new Commit("1", master, commits[0]));
-        commits.Add(new Commit("2", master, commits[1]));
+        var master = new Branch("master");
+        commits.Add(new Init("initial commit", master));
+        commits.Add(new Commit("add base architecture", master, commits[0]));
+        commits.Add(new Commit("update repository", master, commits[1]));
         var slave = new Branch("slave");
-        commits.Add(new Init("3", slave));
-        commits.Add(new Commit("4", slave, commits[3]));
-        commits.Add(new Commit("5", master, commits[2]));
+        commits.Add(new Init("init", slave));
+        commits.Add(new Commit("add components", slave, commits[3]));
+        commits.Add(new Commit("add react", master, commits[2]));
         var feature = new Branch("feature");
-        commits.Add(new Commit("6", feature, commits[5]));
-        commits.Add(new Merge("7", slave, feature, commits[6]));
-        commits.Add(new Commit("8", slave, commits[4]));
-        commits.Add(new Merge("9", slave, master, commits[5]));
-        commits.Add(new Commit("10", feature, commits[7]));
-        commits.Add(new Merge("11", feature, master, commits[9]));
-        commits.Add(new Merge("12", master, slave, commits[8]));
-        commits.Add(new Merge("13", master, feature, commits[10]));
+        commits.Add(new Commit("init", feature, commits[5]));
+        commits.Add(new Merge("merge slave", slave, feature, commits[6]));
+        commits.Add(new Commit("update gitignore", slave, commits[4]));
+        commits.Add(new Merge("merge slave", slave, master, commits[5]));
+        commits.Add(new Commit("add styles", feature, commits[7]));
+        commits.Add(new Merge("merge feature", feature, master, commits[9]));
+        commits.Add(new Merge("merge master to slave", master, slave, commits[8]));
+        commits.Add(new Merge("merge master to feature", master, feature, commits[10]));
     }
 }
